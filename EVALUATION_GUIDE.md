@@ -189,19 +189,67 @@ reporte).
 
 ---
 
-## 4. Criterio de calificación rápido (sobre 5.0)
+## 4. Criterio de calificación (escala discreta 0 / 2.5 / 5.0)
 
-Alineado a las tres fases de la sustentación (0–5, 5–10, 10–15 min).
-Aplicar por reto si se evalúan ambos, o usar como rúbrica única si la
-sustentación se centra en uno solo (ajustar a criterio del curso).
+La nota se da **por reto**, en tres valores únicos posibles: **0**,
+**2.5** o **5.0**. No hay puntos intermedios: cada hito o se logra
+completo o no cuenta. Esto corresponde 1 a 1 con las fases de tiempo
+de la sección 1 (0–5 min → hito de 2.5; 5–15 min → hito de 5.0).
 
-| Componente | Peso | Puntos (sobre 5.0) | Criterio |
-|---|---|---|---|
-| **Fase Ofensiva** (explotación + flag) | 40% | 2.0 | 2.0 = obtiene la flag correcta y explica claramente el mecanismo de la vulnerabilidad. 1.0–1.5 = obtiene la flag con ayuda/pista o explicación incompleta. 0 = no obtiene la flag. |
-| **Fase Defensiva** (parche aplicado en vivo) | 40% | 2.0 | 2.0 = aplica el parche correcto, el exploit original queda mitigado y el acceso legítimo sigue funcionando. 1.0–1.5 = parche parcial o que rompe funcionalidad legítima. 0 = no logra mitigar o no lo intenta. |
-| **Verificación en vivo + pregunta teórica** | 20% | 1.0 | 1.0 = el parche resiste la variante del evaluador y responde correctamente la pregunta teórica de impacto/riesgo residual. 0.5 = resiste la variante pero respuesta teórica débil, o viceversa. 0 = el parche era "hardcodeado" (falla con la variante) y/o no responde la pregunta. |
+Esta misma tabla (sin las columnas de "evidencia interna del
+evaluador") está publicada para los estudiantes en
+[`RUBRICA_ESTUDIANTE.md`](./RUBRICA_ESTUDIANTE.md) — pueden conocerla
+de antemano, ya que no revela flags, payloads ni parches.
 
-**Total: 5.0 puntos.**
+### Reto 1 — Command Injection
+
+| Nota | Se otorga cuando... | Cómo lo confirma el evaluador |
+|---|---|---|
+| **0** | El grupo no logra que el servidor ejecute un comando distinto al `ping` esperado (no obtiene la Flag 1) al terminar el min 5. | No aparece `FLAG{cmd_1nj3ct10n_dmz_byp4ss}` en la respuesta, ni con ayuda de la pista. |
+| **2.5** | El grupo logra la inyección, obtiene la Flag 1 **y** explica correctamente por qué ocurre (concatenación de strings ejecutada con `shell=True`/`os.popen`). | Flag visible en pantalla + explicación verbal coherente con el cheatsheet (sección 2). |
+| **5.0** | Además de lo anterior: aplica en vivo el parche (`subprocess.run` con lista de argumentos + validación de entrada), el payload original **y** la variante del evaluador (min 10–15) ya no filtran la flag, el ping legítimo (`127.0.0.1`) sigue funcionando, y responde bien la pregunta teórica. | Repetir payload original → sin flag. Repetir variante (`` `cat flag.txt` `` o similar) → sin flag. `127.0.0.1` normal → responde ping. Pregunta teórica → respuesta correcta. |
+
+Nota intermedia (p. ej. parche que rompe el ping legítimo, o que solo
+bloquea el payload exacto pero cae con la variante): se queda en
+**2.5**, no se promedia a 3.75 ni 1.25 — la escala es estrictamente
+{0, 2.5, 5.0}.
+
+### Reto 2 — IDOR / Broken Access Control
+
+| Nota | Se otorga cuando... | Cómo lo confirma el evaluador |
+|---|---|---|
+| **0** | El grupo no logra acceder al reporte de otro usuario (no obtiene la Flag 1) al terminar el min 5. | No aparece `FLAG{1d0r_br0k3n_4cc3ss_c0ntr0l}`, ni con ayuda de la pista. |
+| **2.5** | El grupo se autentica, cambia el identificador del recurso, obtiene la Flag 1 **y** explica correctamente por qué ocurre (falta de verificación de propiedad del recurso: autenticación ≠ autorización). | Flag visible en pantalla (vía `/report?id=1` o `/api/report/1`) + explicación verbal coherente con el cheatsheet (sección 3). |
+| **5.0** | Además de lo anterior: aplica en vivo el parche de autorización (`abort(403)` comparando `user_id`), tanto el acceso original **como** la variante del evaluador devuelven **403** en ambos endpoints (`/report` y `/api/report/<id>`), el acceso al reporte propio (`id=2`) sigue devolviendo `200`, y responde bien la pregunta teórica. | `curl .../report?id=1` → `403`. `curl .../api/report/1` → `403`. `curl .../report?id=2` → `200`. Pregunta teórica → respuesta correcta. |
+
+Nota intermedia (p. ej. parche aplicado solo en `/report` pero no en
+`/api/report/<id>`, o que rompe el acceso al reporte propio): se queda
+en **2.5**.
+
+### Nota final de la sustentación
+
+Si el curso evalúa **ambos retos** en los 15 minutos, la nota final es
+el **promedio simple** de las dos notas de reto. Como cada una ya es
+0, 2.5 o 5.0, los únicos resultados posibles del promedio son:
+
+| Reto 1 | Reto 2 | Nota final |
+|---|---|---|
+| 0 | 0 | 0 |
+| 0 | 2.5 / 2.5 | 0 |
+| 2.5 | 2.5 | 2.5 |
+| 0 | 5.0 | 2.5 |
+| 2.5 | 5.0 | 3.75* |
+| 5.0 | 5.0 | 5.0 |
+
+\*Si el curso exige que la nota final también sea estrictamente {0,
+2.5, 5.0}, redondear 3.75 hacia abajo a **2.5** (criterio conservador:
+exige el nivel más alto en ambos retos para llegar a 5.0). Ajustar
+este criterio de redondeo antes de la primera sustentación y
+comunicarlo al grupo.
+
+Si el curso evalúa **un solo reto** por grupo (por restricción de
+tiempo), la nota final es directamente la nota de ese reto (0, 2.5 o
+5.0).
 
 ### Banco de preguntas teóricas sugeridas (elegir 1 por grupo)
 - Reto 1: "¿Por qué `subprocess.run` con lista de argumentos es seguro
