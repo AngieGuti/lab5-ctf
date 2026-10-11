@@ -7,8 +7,8 @@ Lab5 CTF - Reto 1: Command Injection
 
 Este endpoint ejecuta un "ping" hacia el host indicado por el usuario,
 pero construye el comando de forma insegura concatenando texto y
-ejecutándolo con shell=True. Esto permite inyección de comandos del
-sistema operativo (OS Command Injection).
+ejecutándolo con shell=True (vía os.popen). Esto permite inyección de
+comandos del sistema operativo (OS Command Injection).
 
 Objetivo del reto (ofensivo):
     Enviar un payload como:
@@ -19,17 +19,20 @@ Objetivo del reto (ofensivo):
     contenido de flag.txt.
 
 Objetivo del reto (defensivo):
-    Editar este archivo (correr dentro del contenedor vía ttyd en
-    /app/app.py) para reemplazar la construcción insegura del comando
-    por una llamada segura usando subprocess.run con una lista de
-    argumentos, más validación de entrada (regex / módulo ipaddress),
-    de forma que la inyección ya no sea posible.
+    Editar este archivo (vía ttyd en http://<host>:7681, con
+    'nano app.py' dentro de /app) siguiendo las instrucciones del
+    bloque marcado [TODO DEFENSA] más abajo, para reemplazar la
+    construcción insegura del comando por una llamada segura usando
+    subprocess.run con una lista de argumentos, más validación de
+    entrada.
 
     Una copia de referencia de esta versión vulnerable original queda
     guardada en app.clean/app.py por si se necesita restaurar el reto.
 """
 
 from flask import Flask, request, render_template
+import subprocess
+import re
 import os
 
 app = Flask(__name__)
@@ -66,8 +69,20 @@ def diagnostic():
     # entrada del usuario dentro de un comando de shell.
     # Un atacante puede inyectar comandos adicionales usando ';', '&&',
     # '|', backticks, etc.
-    command = "ping -c 1 " + host
-    output = os.popen(command).read()
+    output = os.popen("ping -c 1 " + host).read()
+
+    # ========================================================
+    # [TODO DEFENSA]: MITIGACIÓN DE COMMAND INJECTION
+    # 1. Comenta la línea os.popen anterior.
+    # 2. Completa la condición if not para rechazar hosts con caracteres inválidos.
+    # 3. Descomenta el bloque subprocess.run seguro ya preparado:
+    #
+    # if not re.match(r"^[a-zA-Z0-9.-]+$", host):
+    #     output = "Error: Caracteres no permitidos en el host."
+    # else:
+    #     res = subprocess.run(["ping", "-c", "1", host], capture_output=True, text=True, timeout=3)
+    #     output = res.stdout or res.stderr
+    # ========================================================
     # --- FIN BLOQUE VULNERABLE -----------------------------------------
 
     if request.is_json:

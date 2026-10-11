@@ -37,6 +37,30 @@
             white-space: pre-wrap;
             border: 1px solid #30363d;
         }
+        .info-banner {
+            background: #161b22;
+            border: 1px solid #388bfd;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .info-banner summary {
+            cursor: pointer;
+            padding: 12px 16px;
+            color: #58a6ff;
+            font-weight: bold;
+            list-style: none;
+            font-size: 14px;
+        }
+        .info-banner summary::-webkit-details-marker { display: none; }
+        .info-banner[open] summary { border-bottom: 1px solid #30363d; }
+        .info-banner-body { padding: 14px 16px; font-size: 13.5px; line-height: 1.6; }
+        .info-banner-body p { margin: 6px 0; }
+        .info-banner code {
+            background: #0d1117;
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #79c0ff;
+        }
     </style>
 </head>
 <body>
@@ -45,11 +69,30 @@
         <a href="/logout">Cerrar sesión</a>
     </div>
 
+    <details class="info-banner">
+        <summary>📋 Instrucciones del Reto 2 — IDOR / Broken Access Control (clic para expandir)</summary>
+        <div class="info-banner-body">
+            <p><strong>Escenario:</strong> Portal de Reportes de Auditoría DMZ.</p>
+            <p><strong>Credenciales disponibles:</strong> <code>auditor</code> / <code>auditor123</code> (usuario estándar id=2).</p>
+            <p><strong>Fase 1 (Ofensiva):</strong> Identifica la vulnerabilidad IDOR (Broken Access Control) para visualizar el reporte confidencial del administrador (id=1).</p>
+            <p><strong>Fase 2 (Defensiva):</strong> Accede a la terminal web en <code id="ttyd-link">http://&lt;host&gt;:7682</code>, abre <code>app.py</code>, localiza las rutas <code>/report</code> y <code>/api/report/</code> y restringe el acceso al dueño del reporte mediante <code>abort(403)</code>.</p>
+        </div>
+    </details>
+
     <h1>📄 Reporte de Auditoría #{{ report['id'] }}</h1>
     <div class="card">
         <div class="meta">Propietario (user_id): {{ report['user_id'] }}</div>
         <h3>{{ report['title'] }}</h3>
         <pre>{{ report['content'] }}</pre>
     </div>
+
+    <script>
+        (function () {
+            var el = document.getElementById("ttyd-link");
+            if (el) {
+                el.textContent = "http://" + window.location.hostname + ":7682";
+            }
+        })();
+    </script>
 </body>
 </html>

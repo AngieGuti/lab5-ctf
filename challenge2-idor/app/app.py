@@ -28,13 +28,10 @@ Objetivo del reto (ofensivo):
            /api/report/1
 
 Objetivo del reto (defensivo):
-    Editar este archivo (vía ttyd en /app/app.py) para agregar la
-    validación de autorización que falta, por ejemplo:
-
-        if report["user_id"] != session.get("user_id"):
-            return abort(403)
-
-    tanto en /report como en /api/report/<id>.
+    Acceder a la terminal web en http://<host>:7682, abrir este archivo
+    ('nano app.py' dentro de /app) y, en las rutas /report y
+    /api/report/<id>, agregar la validación de autorización que falta
+    en el bloque marcado [TODO DEFENSA] más abajo.
 
     Una copia de referencia de esta versión vulnerable original queda
     guardada en app.clean/app.py por si se necesita restaurar el reto.
@@ -65,6 +62,12 @@ def index():
     return redirect(url_for("login"))
 
 
+# ------------------------------------------------------------------
+# /login y /logout funcionan de forma completamente independiente:
+# no dependen de (ni son bloqueadas por) ninguna verificación de
+# autorización. Cualquiera puede llegar a /login sin sesión previa,
+# y /logout siempre limpia la sesión sin condiciones adicionales.
+# ------------------------------------------------------------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     error = None
@@ -112,15 +115,18 @@ def report():
     report_id = request.args.get("id", session["user_id"])
 
     conn = get_db()
-    # --- INICIO BLOQUE VULNERABLE -----------------------------------
-    # Se consulta el reporte solicitado sin comparar su user_id contra
-    # el usuario de la sesión actual (falta control de autorización).
     row = conn.execute("SELECT * FROM reports WHERE id = ?", (report_id,)).fetchone()
-    # --- FIN BLOQUE VULNERABLE ---------------------------------------
     conn.close()
 
     if row is None:
         return "Reporte no encontrado", 404
+
+    # ========================================================
+    # [TODO DEFENSA]: CONTROL DE ACCESO (IDOR)
+    # Agrega aquí la validación: si el reporte no pertenece al
+    # usuario autenticado, retorna abort(403).
+    # Pista: Compara row["user_id"] con session.get("user_id")
+    # ========================================================
 
     return render_template("report.html", report=row, username=session["username"])
 
@@ -135,13 +141,18 @@ def api_report(report_id):
         return jsonify({"error": "No autenticado"}), 401
 
     conn = get_db()
-    # --- INICIO BLOQUE VULNERABLE -----------------------------------
     row = conn.execute("SELECT * FROM reports WHERE id = ?", (report_id,)).fetchone()
-    # --- FIN BLOQUE VULNERABLE ---------------------------------------
     conn.close()
 
     if row is None:
         return jsonify({"error": "Reporte no encontrado"}), 404
+
+    # ========================================================
+    # [TODO DEFENSA]: CONTROL DE ACCESO (IDOR)
+    # Agrega aquí la validación: si el reporte no pertenece al
+    # usuario autenticado, retorna abort(403).
+    # Pista: Compara row["user_id"] con session.get("user_id")
+    # ========================================================
 
     return jsonify({
         "id": row["id"],
