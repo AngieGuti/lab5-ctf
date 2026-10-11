@@ -2,13 +2,13 @@
 """
 unlock.py - Mecanismo de desbloqueo de la Fase Defensiva (Reto 2).
 
-app.py arranca en modo SOLO LECTURA (chmod 444). Este script:
+Este script:
 
     1. Solicita la flag obtenida en la Fase Ofensiva.
     2. Si es incorrecta, muestra un error y termina con código 1.
-    3. Si es correcta, habilita escritura sobre app.py (chmod 664),
-       imprime el informe de incidente y devuelve el control a la shell.
-       No abre ningún editor: la edición la realiza el estudiante.
+    3. Si es correcta, imprime el informe de incidente y termina con
+       código 0. No modifica permisos ni abre ningún editor: la
+       edición de app.py la realiza el estudiante.
 
 Se compara el hash SHA-256 de la flag, no el texto plano.
 
@@ -17,11 +17,7 @@ Uso:
 """
 
 import hashlib
-import os
 import sys
-
-APP_DIR = os.path.dirname(os.path.abspath(__file__))
-APP_PY = os.path.join(APP_DIR, "app.py")
 
 # SHA-256 de FLAG{1d0r_br0k3n_4cc3ss_c0ntr0l}
 EXPECTED_FLAG_HASH = "2311bfc62ecdbe3af4e04c80e7ae09ea4bb8121e9d1f3db6783393e6f5c38063"
@@ -61,12 +57,12 @@ def main() -> None:
         print("[!] Flag incorrecta. Debes explotar la vulnerabilidad primero.")
         sys.exit(1)
 
-    os.chmod(APP_PY, 0o664)
-
     try:
         print(INCIDENT_REPORT)
     except UnicodeEncodeError:
         print(INCIDENT_REPORT.encode("ascii", errors="replace").decode("ascii"))
+
+    sys.exit(0)
 
 
 if __name__ == "__main__":

@@ -7,15 +7,13 @@
 # Este script arranca como root (ver Dockerfile: ya no hay USER antes
 # del ENTRYPOINT) únicamente para corregir la propiedad de /app, que
 # en algunos hosts (p. ej. bind mounts de Docker Desktop en Windows)
-# aparece como root sin importar el chown hecho en build time. Sin
-# este arreglo, el usuario 'student' no podría ejecutar chmod sobre
-# app.py desde unlock.py (chmod exige ser el propietario del archivo).
+# aparece como root sin importar el chown hecho en build time. Así el
+# usuario 'student' puede editar app.py.
 # Flask y ttyd se ejecutan como 'student' vía 'su', nunca como root.
 
 set -e
 
 chown -R student:student /app
-chmod 444 /app/app.py
 
 cd /app
 

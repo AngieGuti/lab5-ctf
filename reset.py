@@ -2,16 +2,12 @@
 """
 reset.py - Alternativa multiplataforma a reset.sh.
 
-Restaura el estado inicial (vulnerable + bloqueado) de los retos del
+Restaura el estado inicial (vulnerable) de los retos del
 laboratorio, copiando las versiones originales desde app.clean/ sobre
 las carpetas app/ activas de cada reto, usando shutil.copyfile (evita
 depender de 'cp' y de la disponibilidad de un shell POSIX, lo cual es
 útil en Windows sin Git Bash / WSL, o en cualquier entorno donde
 'bash reset.sh' no esté disponible).
-
-Además, vuelve a dejar app.py en modo SOLO LECTURA (chmod 444) en
-ambos retos, para que el siguiente grupo deba ejecutar 'unlock.py' con
-la flag correcta antes de poder editarlo.
 
 Como docker-compose.yml monta ./challengeX/app como volumen dentro del
 contenedor, y Flask corre en modo debug (autoreload), los cambios se
@@ -24,9 +20,7 @@ Uso:
 
 import shutil
 import stat
-import subprocess
 import sys
-import time
 from pathlib import Path
 
 LAB_DIR = Path(__file__).resolve().parent
@@ -55,8 +49,7 @@ FILES_TO_RESTORE = [
     ),
 ]
 
-# app.py de ambos retos vuelve a modo SOLO LECTURA (444) tras el reset.
-APP_PY_FILES_TO_LOCK = [
+APP_PY_FILES = [
     LAB_DIR / "challenge1-injection" / "app" / "app.py",
     LAB_DIR / "challenge2-idor" / "app" / "app.py",
 ]
@@ -109,51 +102,13 @@ def safe_print(message: str) -> None:
         print(message.encode("ascii", errors="replace").decode("ascii"))
 
 
-CONTAINER_NAMES = ["ctf-challenge1-injection", "ctf-challenge2-idor"]
-
-
-def relock_inside_containers() -> None:
-    """
-    Refuerzo: en algunos hosts (p. ej. bind mounts de Docker Desktop en
-    Windows) sobrescribir el archivo desde fuera del contenedor hace
-    que vuelva a aparecer como propiedad de 'root' dentro de él (en vez
-    de 'student'), lo que haría fallar el chmod que hace unlock.py la
-    siguiente vez. Si los contenedores están corriendo, se repite el
-    chown + chmod también desde dentro, vía 'docker exec' (como root,
-    ya que el contenedor no fija USER por defecto). No falla el script
-    si docker no está disponible o el contenedor no corre.
-    """
-    docker = shutil.which("docker")
-    if docker is None:
-        return
-
-    def run_ok(cmd: list) -> bool:
-        try:
-            return subprocess.run(cmd, capture_output=True, timeout=10).returncode == 0
-        except (OSError, subprocess.SubprocessError):
-            return False
-
-    for name in CONTAINER_NAMES:
-        # Pequeño reintento: justo después de sobrescribir el archivo
-        # desde el host, el bind mount puede tardar un instante en
-        # propagar el cambio al contenedor.
-        for _ in range(3):
-            chown_ok = run_ok([docker, "exec", name, "chown", "student:student", "/app/app.py"])
-            chmod_ok = run_ok([docker, "exec", name, "chmod", "444", "/app/app.py"])
-            if chown_ok and chmod_ok:
-                break
-            time.sleep(0.5)
-
-
 def main() -> None:
     for src, dst in FILES_TO_RESTORE:
         restore_file(src, dst)
 
-    # app.py bloqueado (solo lectura) hasta que se ejecute unlock.py.
-    for app_py in APP_PY_FILES_TO_LOCK:
-        chmod_safe(app_py, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)  # 444
-
-    relock_inside_containers()
+    # app.py queda editable (664) para el siguiente grupo.
+    for app_py in APP_PY_FILES:
+        chmod_safe(app_py, stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH)
 
     # unlock.py ejecutable para el siguiente grupo.
     for unlock_py in UNLOCK_PY_FILES:
