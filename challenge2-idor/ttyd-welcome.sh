@@ -10,7 +10,8 @@ cat <<'EOF'
 
      python unlock.py
 
- e ingresa la flag obtenida en la Fase Ofensiva.
+ e ingresa la flag obtenida en la Fase Ofensiva. Obtendrás una flag
+ defensiva para editar app.py con nano.
 ========================================================================
 EOF
 

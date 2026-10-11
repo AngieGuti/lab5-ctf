@@ -8,9 +8,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         bash \
         procps \
         nano \
-        vim \
         sqlite3 \
+    && mv /usr/bin/nano /usr/bin/nano.bin \
     && rm -rf /var/lib/apt/lists/*
+
+# Wrapper de seguridad: /usr/bin/nano pide la flag defensiva antes de
+# ejecutar el binario real (/usr/bin/nano.bin).
+ENV NANO_UNLOCK_FLAG="FLAG{unlock_nano_idor_defense_3421}"
+COPY nano-wrapper.sh /usr/bin/nano
+RUN sed -i 's/[[:cntrl:]]$//' /usr/bin/nano \
+    && chmod 755 /usr/bin/nano
 
 # Instalación de ttyd (binario estático desde GitHub releases)
 RUN ARCH="$(dpkg --print-architecture)" \

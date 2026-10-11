@@ -6,9 +6,9 @@ Este script:
 
     1. Solicita la flag obtenida en la Fase Ofensiva.
     2. Si es incorrecta, muestra un error y termina con código 1.
-    3. Si es correcta, imprime el informe de incidente y termina con
-       código 0. No modifica permisos ni abre ningún editor: la
-       edición de app.py la realiza el estudiante.
+    3. Si es correcta, imprime el informe de incidente y muestra la
+       flag defensiva para nano y termina con código 0. No modifica
+       permisos ni abre ningún editor.
 
 Se compara el hash SHA-256 de la flag, no el texto plano.
 
@@ -39,6 +39,13 @@ INSTRUCCIONES DE REMEDIACIÓN:
 1. Analiza el impacto de cada propuesta sobre el servicio (disponibilidad de dominios vs seguridad).
 2. Edita manualmente 'app.py' utilizando el editor de texto de tu preferencia en consola.
 3. Ubica el bloque de diagnóstico y activa la opción seleccionada comentando la llamada vulnerable.
+============================================================
+
+============================================================
+[+] FASE OFENSIVA COMPLETADA CON ÉXITO
+Usa la siguiente flag defensiva para desbloquear 'nano app.py':
+
+FLAG{unlock_nano_cmd_defense_9812}
 ============================================================
 """
 

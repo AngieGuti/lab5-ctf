@@ -6,9 +6,9 @@ Este script:
 
     1. Solicita la flag obtenida en la Fase Ofensiva.
     2. Si es incorrecta, muestra un error y termina con código 1.
-    3. Si es correcta, imprime el informe de incidente y termina con
-       código 0. No modifica permisos ni abre ningún editor: la
-       edición de app.py la realiza el estudiante.
+    3. Si es correcta, imprime el informe de incidente y muestra la
+       flag defensiva para nano y termina con código 0. No modifica
+       permisos ni abre ningún editor.
 
 Se compara el hash SHA-256 de la flag, no el texto plano.
 
@@ -30,17 +30,22 @@ INCIDENT_REPORT = """
 - Causa: Falla de control de acceso a nivel de objeto (IDOR).
 - Impacto: Usuarios con rol 'auditor' acceden a datos de administración.
 
-DIRECTIVA TÉCNICA DE SEGURIDAD:
-* Principio de Verificación de Propietario:
-  Ningún usuario puede consultar registros que no le pertenezcan.
-  El sistema debe validar que la identidad autenticada en sesión
-  coincida con el dueño del registro solicitado. En caso de discrepancia,
-  debe denegar el acceso retornando error 403 Forbidden.
+ESTRATEGIAS DE REMEDIACIÓN PROPUESTAS POR ARQUITECTURA:
+* Propuesta 1: Validación de estado de sesión (verificar existencia de cookie activa).
+* Propuesta 2: Validación estricta de propiedad (correlacionar identificador del registro con el usuario autenticado).
+* Propuesta 3: Validación de formato y rango numérico del identificador del reporte.
 
 INSTRUCCIONES DE REMEDIACIÓN:
 1. Edita manualmente 'app.py' utilizando el editor de texto en consola.
 2. Ubica las funciones de consulta (/report y /api/report) tras la recuperación del registro.
-3. Implementa la validación de pertenencia requerida antes de responder al cliente.
+3. Evalúa cada propuesta y activa en el bloque [TODO DEFENSA] la opción que mitigue la fuga.
+============================================================
+
+============================================================
+[+] FASE OFENSIVA COMPLETADA CON ÉXITO
+Usa la siguiente flag defensiva para desbloquear 'nano app.py':
+
+FLAG{unlock_nano_idor_defense_3421}
 ============================================================
 """
 

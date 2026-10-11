@@ -13,15 +13,39 @@ Antes de cada grupo, ejecutar desde la raíz del repositorio:
 ```
 
 para garantizar que ambos retos arrancan en estado vulnerable **y**
-con `app.py` bloqueado en modo solo lectura (`chmod 444`) — el grupo
+con `app.py` en su versión limpia. La edición con `nano` está
+protegida por un wrapper que exige una **flag defensiva**: el grupo
 debe ejecutar `python unlock.py` con la flag correcta dentro del
-contenedor para poder editarlo (ver sección 2 y 3).
+contenedor para obtener su flag defensiva (ver secciones 2 y 3 y la tabla
+más abajo).
 
 **Referencia para el evaluador** (hashes SHA-256 usados por
 `unlock.py` para validar la flag sin almacenarla en texto plano en el
 propio script):
 - Reto 1: `4f8caccc3c35d319d5f56b3df828f879616c0e3331a81a9d5e2ccb17d537a8fb`
 - Reto 2: `2311bfc62ecdbe3af4e04c80e7ae09ea4bb8121e9d1f3db6783393e6f5c38063`
+
+**Flags del laboratorio** (la flag defensiva la entrega `unlock.py` al
+ingresar la flag ofensiva; `nano` está interceptado por un wrapper en
+`/usr/bin/nano` que exige esa flag antes de ejecutar `/usr/bin/nano.bin`;
+la flag defensiva se define con `ENV NANO_UNLOCK_FLAG` en el Dockerfile):
+
+| Reto | Flag Ofensiva (Fase 1) | Flag Defensiva (Nano) |
+|---|---|---|
+| 1 — Command Injection | `FLAG{cmd_1nj3ct10n_dmz_byp4ss}` | `FLAG{unlock_nano_cmd_defense_9812}` |
+| 2 — IDOR | `FLAG{1d0r_br0k3n_4cc3ss_c0ntr0l}` | `FLAG{unlock_nano_idor_defense_3421}` |
+
+**Claves de respuesta del bloque `[TODO DEFENSA]`:**
+
+| Reto | Opción correcta | Opciones incorrectas |
+|---|---|---|
+| 1 | **Opción 3** (regex `^[a-zA-Z0-9.-]+$` + `subprocess.run` con lista) | 1 (lista negra, evadible), 2 (`isdigit`, rompe dominios) |
+| 2 | **Opción 2** (`row["user_id"] != session.get("user_id")` → `abort(403)`) | 1 (solo autenticación; ya se cumple, no corrige el IDOR), 3 (solo rango numérico; `id=1` sigue pasando) |
+
+Nota: el bloqueo de `nano` es una barrera pedagógica, no una frontera de
+seguridad. La flag defensiva es visible para `student` (variable de
+entorno `NANO_UNLOCK_FLAG`, texto del wrapper) y `/usr/bin/nano.bin`
+es ejecutable directamente.
 
 ---
 
@@ -66,16 +90,14 @@ curl -X POST http://localhost:5001/diagnostic \
 **Flag esperada:** `FLAG{cmd_1nj3ct10n_dmz_byp4ss}`
 
 ### Mecanismo de desbloqueo
-`app.py` arranca en modo solo lectura (`chmod 444`). El grupo debe
-ejecutar, desde la terminal ttyd:
+El grupo debe ejecutar, desde la terminal ttyd:
 ```bash
 python unlock.py
 ```
 e ingresar la flag. `unlock.py` compara el **hash SHA-256** de lo
-ingresado (no la flag en texto plano, para que no sea trivial leerla
-desde el propio script). Si es correcta, imprime el reporte de
-incidente, aplica `chmod 664` a `app.py` y abre `nano app.py`
-automáticamente.
+ingresado (no la flag en texto plano). Si es correcta, imprime el
+reporte de incidente y la flag defensiva `FLAG{unlock_nano_cmd_defense_9812}`. El
+grupo edita luego con `nano app.py`, ingresándola cuando el wrapper la solicite.
 
 ### Parche defensivo exacto
 
@@ -84,21 +106,22 @@ automáticamente.
 output = os.popen("ping -c 1 " + host).read()
 ```
 
-El bloque `[TODO DEFENSA]` presenta **tres opciones comentadas**; el
-grupo debe descomentar únicamente la correcta:
+El bloque `[TODO DEFENSA]` presenta **tres opciones comentadas**
+(numeradas 1–3, sin pistas en el código); el grupo debe descomentar
+únicamente la correcta:
 
-- **Opción A (lista negra)** — `if ";" in host or "&&" in host: ...`
+- **Opción 1 (lista negra)** — `if ";" in host or "&&" in host: ...`
   → **incorrecta**: es trivialmente evadible con otros separadores de
   shell (`|`, backticks, `$()`, saltos de línea, etc.).
-- **Opción B (demasiado restrictiva)** — `if not host.isdigit(): ...`
+- **Opción 2 (demasiado restrictiva)** — `if not host.isdigit(): ...`
   → **incorrecta**: rompe el uso legítimo de la herramienta con
   hostnames (`google.com`, `8.8.8.8` con puntos ya falla también).
-- **Opción C (lista blanca adecuada)** — `if not re.match(r"^[a-zA-Z0-9.-]+$", host): ...`
+- **Opción 3 (lista blanca adecuada)** — `if not re.match(r"^[a-zA-Z0-9.-]+$", host): ...`
   junto con `subprocess.run(["ping", "-c", "1", host], ...)` →
   **correcta**: solo esta combina lista blanca de caracteres **y**
   ejecución sin shell intermedio (lista de argumentos).
 
-**Código DESPUÉS (parcheado, opción C)**:
+**Código DESPUÉS (parcheado, opción 3)**:
 ```python
 if not re.match(r"^[a-zA-Z0-9.-]+$", host):
     output = "Host invalido"
@@ -112,9 +135,9 @@ Puntos clave que el grupo debe mencionar/aplicar:
   `shell=True` ni `os.popen` con concatenación de strings).
 - Validar la entrada con lista blanca **antes** de ejecutar el
   comando, rechazando cualquier carácter de metacaracteres de shell.
-- Si el grupo elige la opción A o B, no alcanza el nivel 5.0 de la
-  rúbrica (ver sección 4) aunque "algo" cambie: A sigue siendo
-  explotable con la variante del evaluador, y B rompe funcionalidad
+- Si el grupo elige la opción 1 o 2, no alcanza el nivel 5.0 de la
+  rúbrica (ver sección 4) aunque "algo" cambie: la 1 sigue siendo
+  explotable con la variante del evaluador, y la 2 rompe funcionalidad
   legítima.
 
 ### Comprobación de que el exploit quedó mitigado
@@ -162,15 +185,14 @@ parche "hardcodeado" contra el payload exacto:
 **Flag esperada:** `FLAG{1d0r_br0k3n_4cc3ss_c0ntr0l}`
 
 ### Mecanismo de desbloqueo
-`app.py` arranca en modo solo lectura (`chmod 444`). El grupo debe
-ejecutar, desde la terminal ttyd:
+El grupo debe ejecutar, desde la terminal ttyd:
 ```bash
 python unlock.py
 ```
 e ingresar la flag. Igual que en el Reto 1, se compara el hash
 SHA-256 de lo ingresado. Si es correcta, imprime el reporte de
-incidente, aplica `chmod 664` a `app.py` y abre `nano app.py`
-automáticamente.
+incidente (3 propuestas de remediación) y la flag defensiva
+`FLAG{unlock_nano_idor_defense_3421}`, requerida por el wrapper de `nano`.
 
 ### Parche defensivo exacto
 
@@ -186,7 +208,19 @@ if row is None:
 return render_template("report.html", report=row, username=session["username"])
 ```
 
-**Código DESPUÉS (parcheado)**:
+El bloque `[TODO DEFENSA]` ofrece **tres opciones comentadas** en ambas
+funciones (justo tras `if row is None:`):
+
+- **Opción 1** — `if "user_id" not in session: return abort(401)`
+  → **incorrecta**: solo verifica autenticación (ya garantizada por la
+  ruta); el IDOR persiste.
+- **Opción 2** — `if row["user_id"] != session.get("user_id"): return abort(403)`
+  → **correcta**: verifica propiedad del recurso.
+- **Opción 3** — `if report_id <= 0: return abort(400)`
+  → **incorrecta**: valida formato/rango, pero `id=1` es válido y
+  sigue filtrando el reporte del admin.
+
+**Código DESPUÉS (parcheado, opción 2)**:
 ```python
 from flask import abort
 

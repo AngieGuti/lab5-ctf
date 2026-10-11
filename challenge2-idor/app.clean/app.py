@@ -100,7 +100,7 @@ def report():
     if "user_id" not in session:
         return redirect(url_for("login"))
 
-    report_id = request.args.get("id", session["user_id"])
+    report_id = request.args.get("id", session["user_id"], type=int)
 
     conn = get_db()
     row = conn.execute("SELECT * FROM reports WHERE id = ?", (report_id,)).fetchone()
@@ -109,11 +109,22 @@ def report():
     if row is None:
         return "Reporte no encontrado", 404
 
-    # ========================================================
-    # [TODO DEFENSA]: CONTROL DE ACCESO
-    # Validar que el reporte pertenezca al usuario en sesión.
-    # Si no coincide, denegar el acceso con código 403.
-    # ========================================================
+    # =========================================================================
+    # [TODO DEFENSA]: SELECCIÓN DE ESTRATEGIA DE AUTORIZACIÓN
+    # Descomenta ÚNICAMENTE la opción de control de acceso que mitigue la fuga:
+    #
+    # --- OPCIÓN 1 ---
+    # if "user_id" not in session:
+    #     return abort(401)
+    #
+    # --- OPCIÓN 2 ---
+    # if row["user_id"] != session.get("user_id"):
+    #     return abort(403)
+    #
+    # --- OPCIÓN 3 ---
+    # if report_id <= 0:
+    #     return abort(400)
+    # =========================================================================
 
     return render_template("report.html", report=row, username=session["username"])
 
@@ -133,11 +144,22 @@ def api_report(report_id):
     if row is None:
         return jsonify({"error": "Reporte no encontrado"}), 404
 
-    # ========================================================
-    # [TODO DEFENSA]: CONTROL DE ACCESO
-    # Validar que el reporte pertenezca al usuario en sesión.
-    # Si no coincide, denegar el acceso con código 403.
-    # ========================================================
+    # =========================================================================
+    # [TODO DEFENSA]: SELECCIÓN DE ESTRATEGIA DE AUTORIZACIÓN
+    # Descomenta ÚNICAMENTE la opción de control de acceso que mitigue la fuga:
+    #
+    # --- OPCIÓN 1 ---
+    # if "user_id" not in session:
+    #     return abort(401)
+    #
+    # --- OPCIÓN 2 ---
+    # if row["user_id"] != session.get("user_id"):
+    #     return abort(403)
+    #
+    # --- OPCIÓN 3 ---
+    # if report_id <= 0:
+    #     return abort(400)
+    # =========================================================================
 
     return jsonify({
         "id": row["id"],
