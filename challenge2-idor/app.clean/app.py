@@ -5,14 +5,8 @@ Lab5 CTF - Reto 2: IDOR / Broken Access Control
 
 ⚠️ VERSION VULNERABLE (a propósito, para fines docentes) ⚠️
 
-Este sistema permite a los usuarios autenticados consultar sus propios
-reportes de auditoría. El problema es que el endpoint que devuelve un
-reporte solo verifica que el usuario esté AUTENTICADO, pero nunca
-verifica que el reporte solicitado le pertenezca (comparar
-report['user_id'] contra session['user_id']). Esto es un Insecure
-Direct Object Reference (IDOR) / Broken Access Control: cualquier
-usuario autenticado puede leer el reporte de cualquier otro usuario
-simplemente cambiando el parámetro `id`.
+Este sistema permite a los usuarios autenticados consultar reportes
+de auditoría de seguridad.
 
 Usuarios de prueba:
     - admin   / admin_pwd_secret  (user_id = 1) -> dueño del reporte id=1 (confidencial, contiene la flag)
@@ -28,13 +22,12 @@ Objetivo del reto (ofensivo):
            /api/report/1
 
 Objetivo del reto (defensivo):
-    Acceder a la terminal web en http://<host>:7682, abrir este archivo
-    ('nano app.py' dentro de /app) y, en las rutas /report y
-    /api/report/<id>, agregar la validación de autorización que falta
-    en el bloque marcado [TODO DEFENSA] más abajo.
+    Este archivo arranca en modo SOLO LECTURA (chmod 444). Para
+    desbloquearlo, sigue las instrucciones de la Fase 2 en la interfaz
+    web del reto.
 
-    Una copia de referencia de esta versión vulnerable original queda
-    guardada en app.clean/app.py por si se necesita restaurar el reto.
+    Una copia de referencia de esta versión original queda guardada en
+    app.clean/app.py por si se necesita restaurar el reto.
 """
 
 import os
@@ -102,12 +95,7 @@ def logout():
 @app.route("/report")
 def report():
     """
-    Endpoint vulnerable a IDOR.
-
-    Solo exige que exista una sesión activa (usuario autenticado),
-    pero NUNCA verifica que el reporte solicitado (`id`) pertenezca al
-    usuario autenticado. Esto permite a cualquier usuario leer el
-    reporte de cualquier otro usuario cambiando el parámetro `id`.
+    Muestra el reporte solicitado mediante el parámetro `id`.
     """
     if "user_id" not in session:
         return redirect(url_for("login"))
@@ -122,10 +110,9 @@ def report():
         return "Reporte no encontrado", 404
 
     # ========================================================
-    # [TODO DEFENSA]: CONTROL DE ACCESO (IDOR)
-    # Agrega aquí la validación: si el reporte no pertenece al
-    # usuario autenticado, retorna abort(403).
-    # Pista: Compara row["user_id"] con session.get("user_id")
+    # [TODO DEFENSA]: CONTROL DE ACCESO
+    # Validar que el reporte pertenezca al usuario en sesión.
+    # Si no coincide, denegar el acceso con código 403.
     # ========================================================
 
     return render_template("report.html", report=row, username=session["username"])
@@ -134,8 +121,7 @@ def report():
 @app.route("/api/report/<int:report_id>")
 def api_report(report_id):
     """
-    Variante API del mismo endpoint vulnerable, devuelve JSON.
-    Igual que /report, no valida la propiedad del reporte.
+    Variante API del endpoint /report, devuelve JSON.
     """
     if "user_id" not in session:
         return jsonify({"error": "No autenticado"}), 401
@@ -148,10 +134,9 @@ def api_report(report_id):
         return jsonify({"error": "Reporte no encontrado"}), 404
 
     # ========================================================
-    # [TODO DEFENSA]: CONTROL DE ACCESO (IDOR)
-    # Agrega aquí la validación: si el reporte no pertenece al
-    # usuario autenticado, retorna abort(403).
-    # Pista: Compara row["user_id"] con session.get("user_id")
+    # [TODO DEFENSA]: CONTROL DE ACCESO
+    # Validar que el reporte pertenezca al usuario en sesión.
+    # Si no coincide, denegar el acceso con código 403.
     # ========================================================
 
     return jsonify({

@@ -75,7 +75,7 @@
             <p><strong>Escenario:</strong> Portal de Reportes de Auditoría DMZ.</p>
             <p><strong>Credenciales disponibles:</strong> <code>auditor</code> / <code>auditor123</code> (usuario estándar id=2).</p>
             <p><strong>Fase 1 (Ofensiva):</strong> Identifica la vulnerabilidad IDOR (Broken Access Control) para visualizar el reporte confidencial del administrador (id=1).</p>
-            <p><strong>Fase 2 (Defensiva):</strong> Para modificar el código, accede a la terminal web en <code id="ttyd-link">http://&lt;host&gt;:7682</code>, ejecuta <code>python unlock.py</code> e ingresa la flag obtenida. Esto desbloqueará <code>app.py</code> y lo abrirá automáticamente en <code>nano</code>; localiza las rutas <code>/report</code> y <code>/api/report/</code> y restringe el acceso al dueño del reporte mediante <code>abort(403)</code>.</p>
+            <p><strong>Fase 2 (Defensiva):</strong> Conéctate a la terminal web del reto, ejecuta 'python unlock.py' con la flag obtenida para revisar el reporte de incidente y desbloquear la edición del servicio.</p>
         </div>
     </details>
 

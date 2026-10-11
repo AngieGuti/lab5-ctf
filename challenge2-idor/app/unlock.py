@@ -2,19 +2,15 @@
 """
 unlock.py - Mecanismo de desbloqueo de la Fase Defensiva (Reto 2).
 
-app.py arranca en modo SOLO LECTURA (chmod 444) para forzar a que el
-grupo explote primero la vulnerabilidad de IDOR y obtenga la flag.
-Este script:
+app.py arranca en modo SOLO LECTURA (chmod 444). Este script:
 
     1. Solicita la flag obtenida en la Fase Ofensiva.
-    2. Si es incorrecta, muestra un aviso y termina (código de salida 1).
-    3. Si es correcta:
-        a) Imprime un breve reporte de incidente (estilo CSIRT).
-        b) Habilita permisos de escritura sobre app.py (chmod 664).
-        c) Abre app.py en nano automáticamente.
+    2. Si es incorrecta, muestra un error y termina con código 1.
+    3. Si es correcta, habilita escritura sobre app.py (chmod 664),
+       imprime el informe de incidente y devuelve el control a la shell.
+       No abre ningún editor: la edición la realiza el estudiante.
 
-Nota: se compara el hash SHA-256 de la flag, no la flag en texto
-plano, para que no sea trivial "hacer trampa" leyendo este archivo.
+Se compara el hash SHA-256 de la flag, no el texto plano.
 
 Uso:
     python unlock.py
@@ -22,8 +18,6 @@ Uso:
 
 import hashlib
 import os
-import stat
-import subprocess
 import sys
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -33,17 +27,25 @@ APP_PY = os.path.join(APP_DIR, "app.py")
 EXPECTED_FLAG_HASH = "2311bfc62ecdbe3af4e04c80e7ae09ea4bb8121e9d1f3db6783393e6f5c38063"
 
 INCIDENT_REPORT = """
-================================================================
- ALERTA DE INCIDENTE CSIRT
-================================================================
- Fuga de informacion confidencial.
+============================================================
+[REPORTE DE INCIDENTE CSIRT - SISTEMA DE REPORTES]
+============================================================
+- Evento: Fuga de información confidencial de auditoría.
+- Causa: Falla de control de acceso a nivel de objeto (IDOR).
+- Impacto: Usuarios con rol 'auditor' acceden a datos de administración.
 
- Causa raiz : Falla de control de acceso a nivel de objeto (IDOR).
- Impacto    : Visualizacion no autorizada de reportes del
-              administrador.
- Accion     : Verificar que session['user_id'] coincida con el
-              propietario del recurso antes de responder.
-================================================================
+DIRECTIVA TÉCNICA DE SEGURIDAD:
+* Principio de Verificación de Propietario:
+  Ningún usuario puede consultar registros que no le pertenezcan.
+  El sistema debe validar que la identidad autenticada en sesión
+  coincida con el dueño del registro solicitado. En caso de discrepancia,
+  debe denegar el acceso retornando error 403 Forbidden.
+
+INSTRUCCIONES DE REMEDIACIÓN:
+1. Edita manualmente 'app.py' utilizando el editor de texto en consola.
+2. Ubica las funciones de consulta (/report y /api/report) tras la recuperación del registro.
+3. Implementa la validación de pertenencia requerida antes de responder al cliente.
+============================================================
 """
 
 
@@ -59,16 +61,12 @@ def main() -> None:
         print("[!] Flag incorrecta. Debes explotar la vulnerabilidad primero.")
         sys.exit(1)
 
-    print(INCIDENT_REPORT)
+    os.chmod(APP_PY, 0o664)
 
-    # Habilita permisos de escritura sobre app.py (chmod 664)
-    os.chmod(
-        APP_PY,
-        stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IWGRP | stat.S_IROTH,
-    )
-
-    # Abre app.py en nano para que el grupo aplique el parche
-    subprocess.call(["nano", APP_PY])
+    try:
+        print(INCIDENT_REPORT)
+    except UnicodeEncodeError:
+        print(INCIDENT_REPORT.encode("ascii", errors="replace").decode("ascii"))
 
 
 if __name__ == "__main__":
