@@ -6,12 +6,17 @@ services:
     ports:
       - "5001:5001"   # App Flask - DMZ.10 Diagnostic Tool
       - "7681:7681"   # ttyd - terminal web para editar app.py en vivo
+    volumes:
+      - ./challenge1-injection/app:/app
     restart: unless-stopped
 
-  # challenge2-idor:
-  #   build:
-  #     context: ./challenge2-idor
-  #   container_name: ctf-challenge2-idor
-  #   ports:
-  #     - "5002:5002"
-  #   restart: unless-stopped
+  challenge2-idor:
+    build:
+      context: ./challenge2-idor
+    container_name: ctf-challenge2-idor
+    ports:
+      - "5002:5002"   # App Flask - Sistema de Reportes de Auditoría
+      - "7682:7682"   # ttyd - terminal web para editar app.py en vivo
+    volumes:
+      - ./challenge2-idor/app:/app
+    restart: unless-stopped
