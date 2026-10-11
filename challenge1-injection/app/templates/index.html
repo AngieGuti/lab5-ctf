@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>DMZ.10 - Herramienta de Diagnóstico de Red</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0d1117;
+            color: #c9d1d9;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        h1 { color: #58a6ff; }
+        .banner {
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 20px;
+        }
+        input[type=text] {
+            width: 70%;
+            padding: 8px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #c9d1d9;
+            border-radius: 4px;
+        }
+        button {
+            padding: 8px 16px;
+            background: #238636;
+            border: none;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover { background: #2ea043; }
+        pre {
+            background: #000;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            border: 1px solid #30363d;
+        }
+        .footer { color: #6e7681; font-size: 12px; margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>🌐 DMZ.10 — Herramienta Interna de Diagnóstico de Red</h1>
+    <div class="banner">
+        <p>Uso interno exclusivo. Introduzca el host o IP a diagnosticar (ping).</p>
+    </div>
+    <form method="POST" action="/diagnostic">
+        <input type="text" name="host" placeholder="ej: 127.0.0.1" value="{{ host or '' }}">
+        <button type="submit">Diagnosticar</button>
+    </form>
+
+    {% if output is not none %}
+    <h3>Resultado:</h3>
+    <pre>{{ output }}</pre>
+    {% endif %}
+
+    <div class="footer">
+        DMZ.10 Diagnostic Tool v1.0 — Lab5 CTF (Reto 1: Command Injection)
+    </div>
+</body>
+</html>
