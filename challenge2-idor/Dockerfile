@@ -31,13 +31,20 @@ RUN useradd -ms /bin/bash student
 WORKDIR /app
 COPY app/ /app/
 COPY app.clean/ /app.clean/
-RUN chown -R student:student /app /app.clean
+RUN chown -R student:student /app /app.clean \
+    && chmod 444 /app/app.py /app.clean/app.py
 
 # Script de arranque: levanta Flask (puerto 5002) y ttyd (puerto 7682)
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY ttyd-welcome.sh /usr/local/bin/ttyd-welcome.sh
+RUN chmod +x /entrypoint.sh /usr/local/bin/ttyd-welcome.sh
 
-USER student
+# Nota: no se fija USER aquí a propósito. El contenedor arranca como
+# root para que entrypoint.sh pueda corregir la propiedad de /app
+# (necesario en bind mounts donde el host no preserva el UID de
+# 'student'), pero Flask y ttyd se ejecutan como 'student' vía 'su'
+# dentro de entrypoint.sh — nunca se expone un proceso corriendo como
+# root.
 
 EXPOSE 5002 7682
 

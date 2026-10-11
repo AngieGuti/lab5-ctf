@@ -14,8 +14,10 @@ esté **autenticado**, pero nunca verifica que el reporte solicitado le
 
 ## Acceso
 - **Aplicación web:** http://localhost:5002
-- **Terminal (ttyd):** http://localhost:7682 (usuario `student`, con
-  permisos de edición sobre `/app/app.py`)
+- **Terminal (ttyd):** http://localhost:7682 (usuario `student`)
+
+`app.py` arranca en modo **solo lectura** (`chmod 444`): no se puede
+editar hasta demostrar que se obtuvo la flag (ver "Parte defensiva").
 
 ## Parte ofensiva
 1. Inicie sesión en `http://localhost:5002/login` con `auditor` /
@@ -45,34 +47,49 @@ esté **autenticado**, pero nunca verifica que el reporte solicitado le
 
 ## Parte defensiva
 1. Conéctese a la terminal web (`http://localhost:7682`).
-2. Edite `/app/app.py` (con `nano` o `vim`) y agregue la validación de
-   autorización que falta, tanto en `/report` como en
-   `/api/report/<id>`, comparando el dueño del reporte contra el
-   usuario de la sesión actual:
+2. Ejecute el script de desbloqueo e ingrese la flag obtenida:
+
+   ```bash
+   python unlock.py
+   ```
+
+   Si la flag es correcta, el script:
+   - Muestra un breve reporte de incidente (estilo CSIRT).
+   - Habilita permisos de escritura sobre `app.py` (`chmod 664`).
+   - Abre automáticamente `app.py` en `nano`.
+
+3. Dentro de `nano`, localice los bloques marcados `[TODO DEFENSA]`
+   (uno en `/report`, otro en `/api/report/<id>`) y agregue la
+   validación de autorización que falta, comparando el dueño del
+   reporte contra el usuario de la sesión actual:
 
    ```python
    from flask import abort
 
-   if report["user_id"] != session.get("user_id"):
+   if row["user_id"] != session.get("user_id"):
        return abort(403)
    ```
 
-3. Flask corre con recarga automática (`debug=True`), por lo que el
-   cambio se refleja de inmediato sin reiniciar el contenedor.
-4. Verifique que, iniciando sesión como `auditor`, acceder a
+4. Guarde (`Ctrl+O`, Enter) y salga (`Ctrl+X`). Flask corre con
+   recarga automática (`debug=True`), por lo que el cambio se refleja
+   de inmediato sin reiniciar el contenedor.
+5. Verifique que, iniciando sesión como `auditor`, acceder a
    `/report?id=1` ahora devuelve `403 Forbidden`, y que `/report?id=2`
    (su propio reporte) sigue funcionando con normalidad.
 
 ## Restauración
-Para volver al estado inicial (vulnerable) de todos los retos, desde la
-raíz del laboratorio ejecute:
+Para volver al estado inicial (vulnerable y bloqueado) de **todos**
+los retos, desde la raíz del laboratorio ejecute:
 
 ```bash
 ./reset.sh
+# o, de forma multiplataforma:
+python reset.py
 ```
 
-Esto copia `app.clean/app.py` y `app.clean/database.sqlite` (las
-versiones originales) sobre la carpeta `app/` activa. Como la carpeta
-`app/` está montada como volumen dentro del contenedor y Flask corre en
-modo debug, el cambio se aplica de inmediato sin reconstruir ni
-reiniciar nada.
+Esto restaura `app.py`, `unlock.py` y `database.sqlite` desde
+`app.clean/` sobre la carpeta `app/` activa, y vuelve a dejar `app.py`
+en modo solo lectura (`chmod 444`) para el siguiente grupo. Como la
+carpeta `app/` está montada como volumen dentro del contenedor y Flask
+corre en modo debug, el cambio se aplica de inmediato sin reconstruir
+ni reiniciar nada.

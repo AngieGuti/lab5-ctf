@@ -9,9 +9,19 @@ Antes de cada grupo, ejecutar desde la raíz del repositorio:
 
 ```bash
 ./reset.sh
+# o: python reset.py
 ```
 
-para garantizar que ambos retos arrancan en estado vulnerable.
+para garantizar que ambos retos arrancan en estado vulnerable **y**
+con `app.py` bloqueado en modo solo lectura (`chmod 444`) — el grupo
+debe ejecutar `python unlock.py` con la flag correcta dentro del
+contenedor para poder editarlo (ver sección 2 y 3).
+
+**Referencia para el evaluador** (hashes SHA-256 usados por
+`unlock.py` para validar la flag sin almacenarla en texto plano en el
+propio script):
+- Reto 1: `4f8caccc3c35d319d5f56b3df828f879616c0e3331a81a9d5e2ccb17d537a8fb`
+- Reto 2: `2311bfc62ecdbe3af4e04c80e7ae09ea4bb8121e9d1f3db6783393e6f5c38063`
 
 ---
 
@@ -55,43 +65,57 @@ curl -X POST http://localhost:5001/diagnostic \
 
 **Flag esperada:** `FLAG{cmd_1nj3ct10n_dmz_byp4ss}`
 
+### Mecanismo de desbloqueo
+`app.py` arranca en modo solo lectura (`chmod 444`). El grupo debe
+ejecutar, desde la terminal ttyd:
+```bash
+python unlock.py
+```
+e ingresar la flag. `unlock.py` compara el **hash SHA-256** de lo
+ingresado (no la flag en texto plano, para que no sea trivial leerla
+desde el propio script). Si es correcta, imprime el reporte de
+incidente, aplica `chmod 664` a `app.py` y abre `nano app.py`
+automáticamente.
+
 ### Parche defensivo exacto
 
 **Código ANTES (vulnerable)** — en `/app/app.py`:
 ```python
-command = "ping -c 1 " + host
-output = os.popen(command).read()
+output = os.popen("ping -c 1 " + host).read()
 ```
 
-**Código DESPUÉS (parcheado)** — reemplazo esperado:
+El bloque `[TODO DEFENSA]` presenta **tres opciones comentadas**; el
+grupo debe descomentar únicamente la correcta:
+
+- **Opción A (lista negra)** — `if ";" in host or "&&" in host: ...`
+  → **incorrecta**: es trivialmente evadible con otros separadores de
+  shell (`|`, backticks, `$()`, saltos de línea, etc.).
+- **Opción B (demasiado restrictiva)** — `if not host.isdigit(): ...`
+  → **incorrecta**: rompe el uso legítimo de la herramienta con
+  hostnames (`google.com`, `8.8.8.8` con puntos ya falla también).
+- **Opción C (lista blanca adecuada)** — `if not re.match(r"^[a-zA-Z0-9.-]+$", host): ...`
+  junto con `subprocess.run(["ping", "-c", "1", host], ...)` →
+  **correcta**: solo esta combina lista blanca de caracteres **y**
+  ejecución sin shell intermedio (lista de argumentos).
+
+**Código DESPUÉS (parcheado, opción C)**:
 ```python
-import ipaddress
-import re
-import subprocess
-
-def es_host_valido(host: str) -> bool:
-    try:
-        ipaddress.ip_address(host)
-        return True
-    except ValueError:
-        return bool(re.fullmatch(r"[A-Za-z0-9.-]{1,253}", host))
-
-if not es_host_valido(host):
-    output = "Host inválido"
+if not re.match(r"^[a-zA-Z0-9.-]+$", host):
+    output = "Host invalido"
 else:
-    resultado = subprocess.run(
-        ["ping", "-c", "1", host],
-        capture_output=True, text=True, timeout=5,
-    )
-    output = resultado.stdout + resultado.stderr
+    res = subprocess.run(["ping", "-c", "1", host], capture_output=True, text=True, timeout=3)
+    output = res.stdout or res.stderr
 ```
 
-Puntos clave que el grupo debe mencionar/aplicar (no exige el código
-literal, sí la idea):
+Puntos clave que el grupo debe mencionar/aplicar:
 - Usar `subprocess.run` con **lista de argumentos** (nunca
   `shell=True` ni `os.popen` con concatenación de strings).
-- Validar la entrada (regex o `ipaddress`) **antes** de ejecutar el
+- Validar la entrada con lista blanca **antes** de ejecutar el
   comando, rechazando cualquier carácter de metacaracteres de shell.
+- Si el grupo elige la opción A o B, no alcanza el nivel 5.0 de la
+  rúbrica (ver sección 4) aunque "algo" cambie: A sigue siendo
+  explotable con la variante del evaluador, y B rompe funcionalidad
+  legítima.
 
 ### Comprobación de que el exploit quedó mitigado
 Repetir el mismo payload tras el parche:
@@ -136,6 +160,17 @@ parche "hardcodeado" contra el payload exacto:
    propiedad.
 
 **Flag esperada:** `FLAG{1d0r_br0k3n_4cc3ss_c0ntr0l}`
+
+### Mecanismo de desbloqueo
+`app.py` arranca en modo solo lectura (`chmod 444`). El grupo debe
+ejecutar, desde la terminal ttyd:
+```bash
+python unlock.py
+```
+e ingresar la flag. Igual que en el Reto 1, se compara el hash
+SHA-256 de lo ingresado. Si es correcta, imprime el reporte de
+incidente, aplica `chmod 664` a `app.py` y abre `nano app.py`
+automáticamente.
 
 ### Parche defensivo exacto
 

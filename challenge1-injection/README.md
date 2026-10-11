@@ -8,8 +8,10 @@ usuario, sin validarla ni sanitizarla.
 
 ## Acceso
 - **Aplicación web:** http://localhost:5001
-- **Terminal (ttyd):** http://localhost:7681 (usuario `student`, con
-  permisos de edición sobre `/app/app.py`)
+- **Terminal (ttyd):** http://localhost:7681 (usuario `student`)
+
+`app.py` arranca en modo **solo lectura** (`chmod 444`): no se puede
+editar hasta demostrar que se obtuvo la flag (ver "Parte defensiva").
 
 ## Parte ofensiva
 1. Abra la aplicación web en `http://localhost:5001`.
@@ -40,50 +42,40 @@ usuario, sin validarla ni sanitizarla.
 
 ## Parte defensiva
 1. Conéctese a la terminal web (`http://localhost:7681`).
-2. Edite `/app/app.py` (con `nano` o `vim`) y sustituya el bloque
-   vulnerable que construye el comando con `os.popen("ping -c 1 " + host)`
-   por una ejecución segura con `subprocess.run` usando una **lista** de
-   argumentos (nunca una cadena interpretada por el shell), más
-   validación de la entrada (regex o el módulo `ipaddress`) para
-   rechazar cualquier host que no sea una IP/hostname válido.
+2. Ejecute el script de desbloqueo e ingrese la flag obtenida:
 
-   Ejemplo de solución (orientativo, no literal):
-
-   ```python
-   import ipaddress
-   import subprocess
-
-   def es_host_valido(host: str) -> bool:
-       try:
-           ipaddress.ip_address(host)
-           return True
-       except ValueError:
-           import re
-           return bool(re.fullmatch(r"[A-Za-z0-9.-]{1,253}", host))
-
-   if not es_host_valido(host):
-       output = "Host inválido"
-   else:
-       resultado = subprocess.run(
-           ["ping", "-c", "1", host],
-           capture_output=True, text=True, timeout=5,
-       )
-       output = resultado.stdout + resultado.stderr
+   ```bash
+   python unlock.py
    ```
 
-3. Flask corre con recarga automática (`debug=True`), por lo que el
-   cambio se refleja de inmediato sin reiniciar el contenedor.
-4. Verifique que el mismo payload (`127.0.0.1; cat flag.txt`) ya no
+   Si la flag es correcta, el script:
+   - Muestra un breve reporte de incidente (estilo CSIRT).
+   - Habilita permisos de escritura sobre `app.py` (`chmod 664`).
+   - Abre automáticamente `app.py` en `nano`.
+
+3. Dentro de `nano`, localice el bloque marcado `[TODO DEFENSA]` y
+   siga sus instrucciones:
+   - Comentar la línea vulnerable (`os.popen(...)`).
+   - Descomentar **únicamente** la opción correcta de las tres
+     presentadas (A: lista negra — insuficiente; B: solo dígitos —
+     demasiado restrictiva; C: lista blanca con regex — la correcta).
+4. Guarde (`Ctrl+O`, Enter) y salga (`Ctrl+X`). Flask corre con
+   recarga automática (`debug=True`), por lo que el cambio se refleja
+   de inmediato sin reiniciar el contenedor.
+5. Verifique que el mismo payload (`127.0.0.1; cat flag.txt`) ya no
    funciona y que un ping legítimo (`127.0.0.1`, `8.8.8.8`) sí responde
    con normalidad.
 
 ## Restauración
-Para volver al estado inicial (vulnerable) del reto, desde la raíz del
-laboratorio ejecute:
+Para volver al estado inicial (vulnerable y bloqueado) de **todos**
+los retos, desde la raíz del laboratorio ejecute:
 
 ```bash
-./reset.sh challenge1
+./reset.sh
+# o, de forma multiplataforma:
+python reset.py
 ```
 
-Esto copia `app.clean/app.py` (la versión vulnerable original) sobre
-`app/app.py` y reconstruye el contenedor.
+Esto restaura `app.py` y `unlock.py` desde `app.clean/` y vuelve a
+dejar `app.py` en modo solo lectura (`chmod 444`) para el siguiente
+grupo.
