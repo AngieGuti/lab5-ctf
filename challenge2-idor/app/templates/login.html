@@ -72,13 +72,13 @@
 <body>
     <h1>🔒 Sistema de Reportes de Auditoría de Seguridad</h1>
 
-    <details class="info-banner" open>
-        <summary>📋 Instrucciones del Reto 2 — IDOR / Broken Access Control (clic para colapsar/expandir)</summary>
+    <details class="info-banner">
+        <summary>📋 Instrucciones del Reto 2 — IDOR / Broken Access Control (clic para expandir)</summary>
         <div class="info-banner-body">
             <p><strong>Escenario:</strong> Portal de Reportes de Auditoría DMZ.</p>
-            <p><strong>Credenciales disponibles:</strong> <code>auditor</code> / <code>auditor123</code> (usuario estándar).</p>
-            <p><strong>Fase 1 (Ofensiva):</strong> Identifica la vulnerabilidad IDOR (Broken Access Control) para visualizar el reporte confidencial del administrador.</p>
-            <p><strong>Fase 2 (Defensiva):</strong> Conéctate a la terminal web del reto, ejecuta 'python unlock.py' con la flag obtenida para revisar el reporte de incidente y desbloquear la edición del servicio.</p>
+            <p><strong>Credenciales disponibles:</strong> <code>auditor</code> / <code>auditor123</code></p>
+            <p><strong>Fase 1 (Ofensiva):</strong> Identifica la falla de control de acceso a nivel de objeto (IDOR) para acceder a los reportes confidenciales del administrador.</p>
+            <p><strong>Fase 2 (Defensiva):</strong> Conéctate a la terminal web del reto, ejecuta <code>python unlock.py</code> con la flag obtenida para revisar el reporte de incidente e implementar la validación de propiedad en el servicio.</p>
         </div>
     </details>
 

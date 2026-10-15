@@ -174,3 +174,5 @@ if __name__ == "__main__":
     # cambios que el estudiante haga en app.py se reflejen sin reiniciar
     # manualmente el contenedor.
     app.run(host="0.0.0.0", port=5002, debug=True)
+
+# reload
