@@ -46,6 +46,12 @@
             border: 1px solid #30363d;
         }
         .footer { color: #6e7681; font-size: 12px; margin-top: 30px; }
+        .form-text.text-muted {
+            display: block;
+            color: #6e7681;
+            font-size: 12px;
+            margin-top: 6px;
+        }
 
         .info-banner {
             background: #161b22;
@@ -80,7 +86,7 @@
         <summary>📋 Instrucciones del Reto 1 — Command Injection (clic para colapsar/expandir)</summary>
         <div class="info-banner-body">
             <p><strong>Escenario:</strong> Herramienta DMZ.10.</p>
-            <p><strong>Fase 1 (Ofensiva):</strong> Explota la vulnerabilidad de Command Injection en el formulario para leer el archivo <code>flag.txt</code>.</p>
+            <p><strong>Fase 1 (Ofensiva):</strong> Explota la concatenación insegura del parámetro host (OS Command Injection) para encadenar la lectura del archivo sensible <code>flag.txt</code>.</p>
             <p><strong>Fase 2 (Defensiva):</strong> Conéctate a la terminal web del reto, ejecuta 'python unlock.py' con la flag obtenida para revisar el reporte de incidente y desbloquear la edición del servicio.</p>
         </div>
     </details>
@@ -89,8 +95,10 @@
         <p>Uso interno exclusivo. Introduzca el host o IP a diagnosticar (ping).</p>
     </div>
     <form method="POST" action="/diagnostic">
-        <input type="text" name="host" placeholder="ej: 127.0.0.1" value="{{ host or '' }}">
+        <input type="text" name="host" placeholder="ej. 8.8.8.8 o localhost" value="{{ host or '' }}">
         <button type="submit">Diagnosticar</button>
+        <br>
+        <small class="form-text text-muted">Introduce un host o IP para diagnóstico. El comando se despacha directamente a la shell del sistema.</small>
     </form>
 
     {% if output is not none %}

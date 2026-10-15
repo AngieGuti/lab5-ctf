@@ -51,7 +51,7 @@ def diagnostic():
         return render_template("index.html", output=None, host=None)
 
     # --- INICIO BLOQUE VULNERABLE -------------------------------------
-    output = os.popen("ping -c 1 " + host).read()
+    output = os.popen("ping -c 1 -W 1 " + host).read()
 
     # =========================================================================
     # [TODO DEFENSA]: SELECCIÓN DE ESTRATEGIA DE MITIGACIÓN
